@@ -1,37 +1,40 @@
-## boolean与类型字面量
+## number与bigint
 
-`number`,`boolean`,`string`,`symbol`,`bigint`这些js本身就支持的基础类型使用起来很简单，ts的书写几乎感觉不到和js的差别，而且支持很多种书写的方式，当然中间还隐藏着一些很重要的细节。拿boolean举例来说：
+有了上面boolean类型的说明，其他的基本数据类型基本一致
 
-```javascript
-let a = true;
-var b = false;
-const c = true;
-let d: boolean = true;
-let e: true = true;
-let f: false = false;
-//let g: true = false; // error 不能将类型false分配给类型true
-```
-
-1. **可以让TS推导出值的类型为boolean（a，b）**
-2. **可以明确的告诉TS，值的类型为boolean（d）**
-3. **可以明确的告诉TS，值为某个具体的boolean值（e，f和g）**
-4. **可以让TS推导出(const)值为某个具体的布尔值（c）**
-
-首先我们常见的写法是1-4（行），要么使用TS自己的类型推导，要么我们自己定义好boolean类型，这是我们开始就介绍的方式。但是，5-7（行）的写法是什么意思？
-
-其实写法也很直观，我们大概也能猜到，**变量e和f不是普通的boolean类型，而是值只为true和false的boolean类型**
-
-> 把类型设为某个值，就限制了e和f在所有布尔值中只能取指定的那个值。这个特性称为类型字面量（type literal）
+> bigint是ES11(ES2020)新增的一种基本数据类型，在JS中，可以用 Number 表示的最大整数为 2^53 - 1，可以写为 Number.MAX_SAFE_INTEGER。如果超过了这个界限，那么就可以用 BigInt 来表示，它可以表示任意大的整数。
 >
-> **类型字面量：仅仅表示一个值的类型**
-
-由于类型字面已经限定了具体的类型true或者false，因此上面代码第7行的错误就可以理解了：
+> 在一个整数字面量后面加 n 的方式定义一个 bigint，或者调用函数 BigInt()
+>
+> **注意这里强调的问题：ES11（ES2020），如果编译的时候没有指定tsconfig的target（指定代码编译成的版本）和lib（TSC假定运行代码的环境）为es2020以上的版本，或者执行tsc的时候，没有指定--target为es2020以上版本，将会编译报错**
 
 ```javascript
-let g: true = false; // error 不能将类型false分配给类型true
+let a = 123;
+let b = Infinity * 0.10;
+const c = 567;
+let d = a < b;
+let e: number = 100;
+let f: 26.218 = 26.218;
+// let g: 26.218 = 10; // error 不能将类型10分配给类型26.218
+
+let a1 = 1234n;
+const b1 = BigInt(1234);
+const b2 = 1234n;;
+let d1 = a < a1;
+// let e1 = 1234.5n; // error bigint字面量必须是整数
+// let f1: bigint = 1234; // error 不能将类型number分配给类型bigint
+let g1: bigint = 100n; 
+let h1: 100n = 100n;
 ```
 
-特别注意一下第三行的代码：`const c = true;`，这里的变量c的类型是类型字面量true。
+1. **可以让TS推导出值的类型为number/bigint（a，b，a1，b1）**
+2. **可以明确的告诉TS，值的类型为number/bigint（e，f1）**
+3. **可以明确的告诉TS，值为某个具体的number/bigint值（e，f，g，g1，h1）**
+4. **可以让TS推导出(const)值为某个具体的number/bigint值（c，b2）**
 
-> 因为const声明的基本类型的值，赋值之后便无法修改，因此TS推导出的是范围最窄的类型
+## string
+
+与boolean和number形式是一样的，而且string字符串形式同样有单引号`''`,双引号`""`和模板字符串``的形式
+
+> 模板字符串还可以有其他的作用，这个在后期再给大家介绍
 
