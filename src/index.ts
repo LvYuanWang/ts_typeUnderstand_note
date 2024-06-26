@@ -1,27 +1,53 @@
-/* number 与 bigint */
-let a = 123;
-let b = Infinity * 0.10;
-const c = 567;
-let d = a < b;
-let e: number = 100;
-let f: 26.218 = 26.218;
-// let g: 26.218 = 10;   // error 不能将类型“10”分配给类型“26.218”
+/* symbol */
 
-let a1 = 1234n;
-const b1 = BigInt(1234);
-const b2 = 1234n;
-let d1 = a < a1;
-// let e1 = 1234.5n;   // error bigint字面量必须是整数
-// let f1: bigint = 1234;  // error 不能将类型number分配给类型bigint
-let g1: bigint = 100n;
-let h1: 100n = 100n;
+let a = Symbol('a');
+let b: symbol = Symbol('a');
+
+console.log(a === b); // false
+
+let obj = {
+    name: 'Symbol',
+    [a]: 'jack',
+    [b]: function () {
+        console.log('ts')
+    }
+}
+
+console.log(obj); // { name: 'Symbol', [Symbol(a)]: 'jack', [Symbol(a)]: [Function] }
+
+for (let key in obj) {
+    console.log("---Key:", key); // name
+}
 
 
-/* string */
-// perttier eslint 注意单引号和双引号格式规范的问题
-let s1 = "hello";
-const s2 = "hello";
-const s3 = 'hello';
-const s4 = `hello`;
+/* Symbol.for(key) */
+let id1 = Symbol.for('id');
 
-let s5: "world" = "world";
+const user = {
+    [id1]: 12345
+}
+
+console.log(user[id1]); // 12345
+console.log(id1); // Symbol(id)
+
+let id2 = Symbol.for('id');
+
+console.log(user[id2]); // 12345
+console.log(id2); // Symbol(id)
+
+console.log(id1 === id2); // true
+
+
+/* unique symbol */
+let c = Symbol('c');
+let d = Symbol('d');
+
+console.log(c === d); // false
+
+const e = Symbol('e');  // unique symbol
+const f: unique symbol = Symbol('f');
+
+// c = e; // 不会报错
+
+// console.log(e === f); // 此处会报错，因为unique symbol是唯一的
+// let g: unique symbol = Symbol('g'); // unique symbol类型的变量必须是const定义的

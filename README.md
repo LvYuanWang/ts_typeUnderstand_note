@@ -1,40 +1,65 @@
-## number与bigint
+## symbol
 
-有了上面boolean类型的说明，其他的基本数据类型基本一致
+symbol 符号是ES6新增的一种基本数据类型。
 
-> bigint是ES11(ES2020)新增的一种基本数据类型，在JS中，可以用 Number 表示的最大整数为 2^53 - 1，可以写为 Number.MAX_SAFE_INTEGER。如果超过了这个界限，那么就可以用 BigInt 来表示，它可以表示任意大的整数。
->
-> 在一个整数字面量后面加 n 的方式定义一个 bigint，或者调用函数 BigInt()
->
-> **注意这里强调的问题：ES11（ES2020），如果编译的时候没有指定tsconfig的target（指定代码编译成的版本）和lib（TSC假定运行代码的环境）为es2020以上的版本，或者执行tsc的时候，没有指定--target为es2020以上版本，将会编译报错**
+> **注意：**如果编译的时候没有指定tsconfig的target和lib为es6（ES2015）以上的版本，或者执行tsc的时候，没有指定--target为es2015以上版本，将会编译报错
+
+symbol经常用于代替对象和映射的字符串键，确保使用正确的键，以防键被意外设置。
 
 ```javascript
-let a = 123;
-let b = Infinity * 0.10;
-const c = 567;
-let d = a < b;
-let e: number = 100;
-let f: 26.218 = 26.218;
-// let g: 26.218 = 10; // error 不能将类型10分配给类型26.218
+let a = Symbol('a');
+let b: symbol = Symbol('a');
 
-let a1 = 1234n;
-const b1 = BigInt(1234);
-const b2 = 1234n;;
-let d1 = a < a1;
-// let e1 = 1234.5n; // error bigint字面量必须是整数
-// let f1: bigint = 1234; // error 不能将类型number分配给类型bigint
-let g1: bigint = 100n; 
-let h1: 100n = 100n;
+console.log(a === b);  // false
+
+let obj = {
+  name: 'Symbol',
+  [a]: 'jack',
+  [b]: function () {
+    console.log('ts')
+  }
+}
+console.log(obj);
+
+for (let key in obj) {
+  console.log("---", key);
+}
 ```
 
-1. **可以让TS推导出值的类型为number/bigint（a，b，a1，b1）**
-2. **可以明确的告诉TS，值的类型为number/bigint（e，f1）**
-3. **可以明确的告诉TS，值为某个具体的number/bigint值（e，f，g，g1，h1）**
-4. **可以让TS推导出(const)值为某个具体的number/bigint值（c，b2）**
+>  Symbol('a')使用指定的名称新建了一个符号，这个符号是唯一的，不与其他任何符号相等，即便再使用相同的名称创建一个符号也是如此。
+>
+>  symbol 属性不参与 `for..in` 循环。`Object.keys()`也会忽略他们
 
-## string
+当然 symbol也能进行全局注册：
 
-与boolean和number形式是一样的，而且string字符串形式同样有单引号`''`,双引号`""`和模板字符串``的形式
+```typescript
+let id1 = Symbol.for('id')
 
-> 模板字符串还可以有其他的作用，这个在后期再给大家介绍
+const user = {
+  [id1]: 123
+}
 
+console.log(user[id1]) // 123
+console.log(id1)      // Symbol(id)
+
+let id2 = Symbol.for('id')
+
+console.log(id1 === id2) // true
+console.log(user[id2]) // 123
+console.log(id2)      // Symbol(id)
+```
+
+`Symbol.for()` 方法创建前，会首先搜索 **全局符号注册表** ，看看是否存在一个键值为 `id` 的 **符号值** 。如果存在就会返回已存在的 **符号值** ；否则创建一个新的 **符号值** 
+
+但是，如果使用const声明的symbol将会是`unique symbol`类型
+
+```javascript
+const c = Symbol('a'); // typeof c
+const d: unique symbol = Symbol('a'); // typeof d
+//let e: unique symbol = Symbol('a'); // error unique symbol的变量必须为const
+
+console.log(c === c);
+console.log(c === d); // error 此比较没有意义，类型typeof c和typeof d没有重叠
+```
+
+`unique symbol`类型与其他字面量类型其实是一样的，比如`1`，`true`，`"hello"`，创建的是表示特定符号的类型
