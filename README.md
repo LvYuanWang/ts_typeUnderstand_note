@@ -1,65 +1,39 @@
-## symbol
+## 类型拓宽
 
-symbol 符号是ES6新增的一种基本数据类型。
+类型拓宽（type widening）是理解TS类型推导机制的关键。
 
-> **注意：**如果编译的时候没有指定tsconfig的target和lib为es6（ES2015）以上的版本，或者执行tsc的时候，没有指定--target为es2015以上版本，将会编译报错
+> 一般来说，TS在推导类型的时候会放宽要求，故意推导出一个更宽泛的类型，而不限定为每个具体的类型。
 
-symbol经常用于代替对象和映射的字符串键，确保使用正确的键，以防键被意外设置。
+声明变量时如果运行以后修改变量的值（例如使用`let`和`var`声明），变量类型将拓宽，从字面值放大到包含该字面量的基础类型
 
 ```javascript
-let a = Symbol('a');
-let b: symbol = Symbol('a');
-
-console.log(a === b);  // false
-
-let obj = {
-  name: 'Symbol',
-  [a]: 'jack',
-  [b]: function () {
-    console.log('ts')
-  }
-}
-console.log(obj);
-
-for (let key in obj) {
-  console.log("---", key);
-}
+let a = 'x';  // string
+let b = 123;  // number
+let c = true; //boolean
 ```
 
->  Symbol('a')使用指定的名称新建了一个符号，这个符号是唯一的，不与其他任何符号相等，即便再使用相同的名称创建一个符号也是如此。
->
->  symbol 属性不参与 `for..in` 循环。`Object.keys()`也会忽略他们
+然而，使用`const`声明不可变的变量时，情况不同，会自动的把**类型缩窄**：
 
-当然 symbol也能进行全局注册：
+```javascript
+const a = 'x'  // 'x'
+const b = 123  // 123
+const c = true // true
+```
+
+我们当然可以显示的标注类型防止类型拓宽
+
+```javascript
+let a:'x' = 'x';   // 'x'
+let b:123 = 123;   // 123
+let c:true = true; // true
+```
+
+不过使用**`const`声明的对象，并不会缩窄推导的类型**
 
 ```typescript
-let id1 = Symbol.for('id')
-
-const user = {
-  [id1]: 123
+const obj = {
+  b: 123  // b是number类型
 }
-
-console.log(user[id1]) // 123
-console.log(id1)      // Symbol(id)
-
-let id2 = Symbol.for('id')
-
-console.log(id1 === id2) // true
-console.log(user[id2]) // 123
-console.log(id2)      // Symbol(id)
 ```
 
-`Symbol.for()` 方法创建前，会首先搜索 **全局符号注册表** ，看看是否存在一个键值为 `id` 的 **符号值** 。如果存在就会返回已存在的 **符号值** ；否则创建一个新的 **符号值** 
-
-但是，如果使用const声明的symbol将会是`unique symbol`类型
-
-```javascript
-const c = Symbol('a'); // typeof c
-const d: unique symbol = Symbol('a'); // typeof d
-//let e: unique symbol = Symbol('a'); // error unique symbol的变量必须为const
-
-console.log(c === c);
-console.log(c === d); // error 此比较没有意义，类型typeof c和typeof d没有重叠
-```
-
-`unique symbol`类型与其他字面量类型其实是一样的，比如`1`，`true`，`"hello"`，创建的是表示特定符号的类型
+因为Javascript对象是可变的，所以在Typescript看来，创建对象之后你可能会更新对象
