@@ -1,7 +1,7 @@
 /* 在JS中一些无效的代码运行 */
 // console.log(3 + [1]);
 
-// const obj = {};
+const obj = {};
 // console.log(obj.info);
 
 // function divide(a) {
@@ -11,5 +11,5 @@
 // const b1 = divide("hello");
 // console.log(b1);
 
-// let user;
+let user;
 // console.log(user.name);
