@@ -1,118 +1,70 @@
-## 类型别名与接口
+## 结构化类型
 
-我们使用let，const，var为某个值声明变量名，也就是这个值的别名，那么类似的，在Typescript中，可以为类型声明别名
+Typescript的对象类型表示**对象的结构**。这是一种设计选择，JavaScript采用的是**结构化类型**，Typescript直接沿用，没有采取名义化类型
 
-```javascript
-type Age = number;
+> 在**结构化类型**中，类型的兼容性是根据其结构或成员来确定的，而不是依赖于类型的名称或标识符。换句话说，如果两个对象具有相同的结构，即它们具有相同的属性和方法，那么它们可以被认为是相同类型或兼容的类型，即使它们的名称不同。在某些语言中也叫做**鸭子类型(鸭子辨型)**（意思是不以貌取人）
+>
+> 相比之下，**名义化类型**的兼容性是根据类型的名称或标识符来确定的。在名义化类型系统中，即使两个对象具有相同的结构，如果它们的名称或标识符不同，它们被认为是不同的类型。
+>
+> 结构化类型通常用于动态类型语言，如JavaScript，而名义化类型通常用于静态类型语言，如Java或C++。
+
+```typescript
 type Person = {
-  name: string
-  age: Age
+  name: string;
+  age: number;
 }
+
+type Animal = {
+  name: string;
+  age: number;
+}
+
+const person: Person = {
+  name: 'John',
+  age: 10
+}
+
+const animal: Animal = person
+
+function greet(person: Person) {
+  console.log(`Hello, ${person.name}`)
+}
+
+greet(animal)
 ```
 
-Age就是一个number，因此可以让Person的解构定义更容易理解。**约定俗成的，一般类型别名的首字母大写**
-
-不过**Typescript无法推导类型别名，因此必须显式注解**。
-
-和使用let声明变量一样，**同一种类型不能声明两次**
+Person类型能够赋值给Animal类型，如果是Java等后端程序员会觉得这样做不可思议，但是其实将类型去掉，看看编译之后的结果，就能理解了，无非就是简单的对象传值，名字并不是最重要的。
 
 ```javascript
-type Color = "red";
-type Color = "blue"; // error 标识符Color重复
-```
-
-而且和let，const一样，**类型别名采用块级作用域**，每一块代码和每一个函数都有自己的作用域，作用域内部的类型别名将遮盖外部的类型别名
-
-```javascript
-type Color = "red";
-
-if (true) { 
-  type Color = "blue"; // 不报错
-  let color: Color = "blue";
-}
-let color: Color = "red";
-```
-
-当然，类型别名现在对我们最有用的地方就是减少重复输入复杂的类型。
-
-我们上面声明对象类型要么类型推导，要么使用对象字面量，但是使用类型字面量书写又难看，而且也不方便，如果有多个同样类型的对象，这太麻烦了，类型别名就很简单的解决了这个问题
-
-```javascript
-type User = {
-  name: string
-  age: number
-}
-
-let user1: User = {
-  name: 'jack',
-  age: 18
-}
-
-let user2: User = {
-  name: 'tom',
-  age: 19
-}
-```
-
-当然类型别名还能嵌套
-
-```javascript
-type Address = {
-  province: string
-  city: string
-}
-type User = {
-  name: string
-  age: number
-  address: Address
-}
-
-let user1: User = {
-  name: 'jack',
-  age: 18,
-  address: {
-    province: '四川',
-    city: '成都'
-  }
-}
-
-let user2: User = {
-  name: 'tom',
-  age: 19,
-  address: {
-    province: '云南',
-    city: '昆明'
-  }
-}
-```
-
-类型别名并不能由TS自动的推导出来，必须手动声明，或者也能使用类型断言
-
-```typescript
-function getUser(): User{ 
-  return {
+"use strict";
+const person = {
     name: 'John',
-    age: 30,
-    address: {
-      province: '四川',
-      city: '成都'
-    }
-  } as User
+    age: 10
+};
+const animal = person;
+function greet(person) {
+    console.log(`Hello, ${person.name}`);
 }
+greet(animal);
 ```
 
-**对于定义比较复杂结构，接口和类型别名基本的作用一致**，上面的类型别名的代码完全可以使用接口进行替换。而且就算是交叉使用也不存在问题
+同样的，就算是class类，一样是结构化类型
 
-```typescript
-type Address = {
-  province: string
-  city: string
+```javascript
+class User { 
+  constructor(
+  	public firstName: string,  // public 是this.firstName=firstName的简写形式
+    public lastName: string, 
+    public age:number) { 
+  }
 }
-interface User  {
-  name: string
-  age: number
-  address: Address
+
+class Person { 
+  constructor(public firstName: string, public lastName: string, public age:number) { 
+  }
 }
+
+let a = new Person('lily','smith',20);
+let b = new User('john','matt',21);
+a = b;
 ```
-
-这里只讲解接口的基本用法，接口其实是面向对象中的概念，我们放在后面的课程学习，而且接口和类型别名之间虽然80%的情况可以互换使用，但是还是有很重要的区别，放在后面一起讲解。
