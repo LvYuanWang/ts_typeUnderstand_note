@@ -3,7 +3,7 @@
 const temp: undefined = undefined;
 const temp2: null = null;
 
-// 只有在 strictNullChecks 为false时，才能将null和undefined赋值给其他类型
+// 只有在 strictNullChecks 为false时，才能将null和undefined赋值给其他类型, 因为这时候null和undefined是所有类型的子类型
 // const temp3: string = undefined;
 // const temp4: number = null;
 
