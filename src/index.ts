@@ -1,18 +1,32 @@
-/* 类型拓宽 */
-// 类型拓宽: 通过赋值操作，TS会自动推断出变量的类型
+/* null 与 undefined */
 
-let a = 'hello';    // string
-let b = 123;    // number
-let c = true;   // boolean
+const temp: undefined = undefined;
+const temp2: null = null;
 
-const d = "hello";    // "hello"
-const e = 123;    // 123
-const f = true;   // true
+// 只有在 strictNullChecks 为false时，才能将null和undefined赋值给其他类型
+// const temp3: string = undefined;
+// const temp4: number = null;
 
-let g: "hello" = "hello";    // "hello"
-let h: 123 = 123;    // 123
-let i: true = true;   // true
+// let temp5: string = null;
 
-const obj = {
-    b: 123
+let temp6 = null;
+
+// function getStr(): string {
+//     if (Math.random() > 0.5) {
+//         return "hello";
+//     }
+// }
+
+type User = {
+    name: string;
+    age: number;
 }
+
+// function getUser(): User {
+//     if (Math.random() > 0.5) {
+//         return {
+//             name: "xiaoming",
+//             age: 18
+//         }
+//     }
+// }

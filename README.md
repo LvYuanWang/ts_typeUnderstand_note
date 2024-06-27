@@ -1,39 +1,45 @@
-## 类型拓宽
+## null与undefined
 
-类型拓宽（type widening）是理解TS类型推导机制的关键。
+在JavaScript中，`null`与`undefined`都表示缺少什么，Typescript也支持这两个值，并且都有各自的类型，类型名称就是null与undefined。
 
-> 一般来说，TS在推导类型的时候会放宽要求，故意推导出一个更宽泛的类型，而不限定为每个具体的类型。
+这两个类型比较特殊，在TS中，`undefined`类型只有`undefined`一个值，`null`类型也只有`null`一个值。
 
-声明变量时如果运行以后修改变量的值（例如使用`let`和`var`声明），变量类型将拓宽，从字面值放大到包含该字面量的基础类型
+我们在写JavaScript的时候，这两个在语义上有细微的差别，`undefined`一般表示尚未定义，而`null`表示缺少值。
 
-```javascript
-let a = 'x';  // string
-let b = 123;  // number
-let c = true; //boolean
-```
+`null`与`undefined`在**没有开启`strictNullChecks`检查的情况下**（tsconfig.json中设置了`strict:true`默认开始，如果想关闭，可以设置`strictNullChecks:false`），**会被视为其他类型的子类型**，比如string类型会被认为包含了`null`与`undefined`
 
-然而，使用`const`声明不可变的变量时，情况不同，会自动的把**类型缩窄**：
-
-```javascript
-const a = 'x'  // 'x'
-const b = 123  // 123
-const c = true // true
-```
-
-我们当然可以显示的标注类型防止类型拓宽
-
-```javascript
-let a:'x' = 'x';   // 'x'
-let b:123 = 123;   // 123
-let c:true = true; // true
-```
-
-不过使用**`const`声明的对象，并不会缩窄推导的类型**
+> `null`与`undefined`也是单独的类型是带有Javascript思维，在遇到复杂结构的时候经常会思考遗漏的问题。最重要的就是忽略类型兼容性的问题。
 
 ```typescript
-const obj = {
-  b: 123  // b是number类型
+const temp1:undefined = undefined;
+const temp2: null = null;
+
+const temp3: string = null; // 仅在关闭了strictNullChecks时才成立
+const temp4: string = undefined; // 仅在关闭了strictNullChecks时才成立
+
+let temp5 = undefined; // any
+let temp6:string = null; // 仅在关闭了strictNullChecks时才成立
+
+// 仅在关闭了strictNullChecks时才成立
+function getStr(): string { 
+  if(Math.random() > 0.5) {
+    return null
+  }
+  return "hello";
+}
+
+type User = {
+  name: string;
+  age: number;
+};
+
+function getUser(): User {
+  if (Math.random() > 0.5) { 
+    return null;
+  }
+  return {
+    name: "John",
+    age: 30,
+  }
 }
 ```
-
-因为Javascript对象是可变的，所以在Typescript看来，创建对象之后你可能会更新对象
