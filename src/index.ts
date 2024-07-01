@@ -1,75 +1,52 @@
-/* 交叉(交集)类型   &  */
+/* typeof 与 控制流分析 */
 
-type Student = { name: string, score: number };
-type Teacher = { name: string, age: number, subject: string };
 
-type User = Student & Teacher;
+/* 控制流分析 */
+const str = 'hello';
 
-const user: User = {
-    name: 'John',
-    score: 100,
-    age: 30,
-    subject: 'Math'
+type MyTypes = number | string | boolean | null | undefined;
+
+function parse(value: MyTypes) {
+    // value的类型会根据不同的条件分支进行缩小, 每流过一个if分支, value的联合类型就会减少一个
+    if (typeof value === 'number') {
+        return value * 2;
+    } else if (typeof value === 'string') {
+        return value.toUpperCase();
+    } else if (typeof value === 'boolean') {
+        return !value;
+    } else {
+        return value;
+    }
 }
 
-// 交叉类型不能使用简单字面量类型和基础类型, 得到的是never类型
-type width = number & string; // never: 交叉类型的属性类型不一致，所以是never
 
-type Color = 'red' & 'green' & 'blue';  // never: 交叉类型的属性值不一致，所以是never
+/* typeof */
+let temp1 = "hello";
+const temp2 = "hello";
+const temp3 = null;
+const temp4 = (a: number, b: number) => a + b + "";
 
+type Temp1 = typeof temp1; // string
+type Temp2 = typeof temp2; // "hello"
+type Temp3 = typeof temp3; // null
+type Temp4 = typeof temp4; // (a: number, b: number) => string
 
-type P = { name: string, sex: "男" | "女" };
-type T = { name: string, age: number };
-type PT = P & T;
-
-const pt: PT = {
-    name: 'Kate',
-    sex: '男',
-    age: 20
+const user = {
+    name: 'Huobi',
+    age: 18,
+    address: {
+        province: 'SiChuan',
+        city: 'ChengDu'
+    }
 }
 
-// 另一种情况, 当交叉对象中出现同一个属性名时, 属性类型则必须一致, 否则得到的是never类型
-// type A = { name: string, sex: string };
-// type B = { name: number, age: number };
-// type AB = A & B;
+type User = typeof user;
 
-// const ab: AB = {
-//     name: "Anna",   // never: 交叉类型的属性类型不一致，所以是never
-//     sex: "男",
-//     age: 20
-// }
-
-// 交叉类型和联合类型一起使用
-type Params = string | number | boolean;
-type A = Params & string; // string: 交叉类型的属性类型一致，所以是string
-
-// 使用交叉类型实现继承的效果
-type Goods = {
-    id: number,
-    name: string,
-    price: number
-}
-
-type Cart = Goods & { count: number }
-type Order = Cart & { address: string }
-
-let goods: Goods = {
-    id: 1,
-    name: 'apple',
-    price: 5
-}
-
-let cart: Cart = {
-    id: 2,
-    name: 'banana',
-    price: 5,
-    count: 3
-}
-
-let order: Order = {
-    id: 3,
-    name: 'orange',
-    price: 5,
-    count: 2,
-    address: 'New York'
+const person: User = {
+    name: 'Bob',
+    age: 19,
+    address: {
+        province: 'Hunan',
+        city: 'ChangSha'
+    }
 }
