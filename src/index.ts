@@ -1,52 +1,68 @@
-/* typeof 与 控制流分析 */
+/* instanceof 与 in */
 
+class Animal {
+    eat() {
+        console.log('Animal eating');
+    }
+}
 
-/* 控制流分析 */
-const str = 'hello';
+class Dog extends Animal {
+    bark() {
+        console.log('Dog barking');
+    }
+}
 
-type MyTypes = number | string | boolean | null | undefined;
+class Cat extends Animal {
+    meow() {
+        console.log('Cat meowing');
+    }
+}
 
-function parse(value: MyTypes) {
-    // value的类型会根据不同的条件分支进行缩小, 每流过一个if分支, value的联合类型就会减少一个
-    if (typeof value === 'number') {
-        return value * 2;
-    } else if (typeof value === 'string') {
-        return value.toUpperCase();
-    } else if (typeof value === 'boolean') {
-        return !value;
+// 控制流分析: 根据if分支通过 instanceof 判断类型, 将 animal 类型一点一点缩小
+function feedAnimal(animal: Animal) {
+    if (animal instanceof Dog) {
+        animal.bark();  // animal: Dog
+    } else if (animal instanceof Cat) {
+        animal.meow(); // animal: Cat
     } else {
-        return value;
+        animal.eat();  // animal: Animal
     }
 }
 
+feedAnimal(new Dog());
 
-/* typeof */
-let temp1 = "hello";
-const temp2 = "hello";
-const temp3 = null;
-const temp4 = (a: number, b: number) => a + b + "";
+const obj = { a: 123 };
 
-type Temp1 = typeof temp1; // string
-type Temp2 = typeof temp2; // "hello"
-type Temp3 = typeof temp3; // null
-type Temp4 = typeof temp4; // (a: number, b: number) => string
-
-const user = {
-    name: 'Huobi',
-    age: 18,
-    address: {
-        province: 'SiChuan',
-        city: 'ChengDu'
-    }
+if ('a' in obj) {
+    console.log('obj has property a');
 }
 
-type User = typeof user;
+type Circle = {
+    kind: 'circle',
+    radius: number
+}
 
-const person: User = {
-    name: 'Bob',
-    age: 19,
-    address: {
-        province: 'Hunan',
-        city: 'ChangSha'
+type Rectangle = {
+    kind: 'rectangle',
+    width: number,
+    height: number
+}
+
+type Triangle = {
+    kind: 'triangle',
+    base: number,
+    height: number
+}
+
+type Shape = Circle | Rectangle | Triangle;
+
+// 控制流分析: 根据if分支通过 in 判断类型, 将 shape 类型一点一点缩小
+function printArea(shape: Shape) {
+    if ('radius' in shape) {
+        console.log(Math.PI * shape.radius ** 2);
+    } else if ('width' in shape) {
+        console.log(shape.width * shape.height);
+    } else {
+        console.log(shape.base * shape.height / 2);
     }
 }
