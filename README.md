@@ -1,96 +1,74 @@
-## 字面量类型检查(可辨识联合类型)
+## 自定义守卫(谓语动词 is)
 
-再结合着对象的联合类型来看一下问题：
+自定义守卫是指通过 `{形参} is {类型}` 的语法结构，来给**返回布尔值的条件函数**赋予类型守卫的能力
 
 ```typescript
-type UserTextEvent = { value: string, target: HTMLInputElement};
-type UserMouseEvent = { value: number, target: HTMLButtonElement};
-type UserEvent = UserTextEvent | UserMouseEvent;
+function isString (input: any) {
+  return typeof input === 'string';
+}
+function isNumber (input: any) {
+  return typeof input === 'number';
+}
 
-function handle(event: UserEvent) { 
-  if (typeof event.value === "string") {
-    console.log(event.value)   // event.value类型为string
-    console.log(event.target); // event.target类型为 HTMLInputElement | HTMLButtonElement
-  } else {
-    console.log(event.value)   // event.value类型为number
-    console.log(event.target); // event.target类型为 HTMLInputElement | HTMLButtonElement
+function foo (input: string | number) {
+  if (isString(input)) {
+    console.log(input) // 依然是 string | number
+  } 
+  else if (isNumber(input)) {
+    console.log(input) // 依然是 string | number
   }
 }
 ```
 
-`event.value`的类型可以顺利的细化，但是`event.target`却不可以，因为handle函数的参数是`UserEvent`。联合之后的`UserEvent`，其实类似于：
+**类型收窄只能在同一的函数中**，如果在不同的函数中就不起作用。
+
+只要我们加上谓语动词：
 
 ```typescript
-type UserEvent = {
-  value: string | number,
-  target: HTMLInputElement | HTMLButtonElement
+function isString (input: any): input is string {
+  return typeof input === 'string';
 }
-```
-
-也就是当`value:string`的时候，`target`可以选择`HTMLInputElement | HTMLButtonElement`
-
-也就是当`value:number`的时候，`target`也可以选择`HTMLInputElement | HTMLButtonElement`
-
-因此，Typescript需要一种更可靠的方式，明确对象的并集类型的具体情况。
-
-最常见的方式是，使用**字面量类型进行标记**，这样具体有值的情况下，就相当于在进行值的判断，这样Typescript就能很精确的推导出，具体的对象并集类型到底是哪个类型了
-
-```typescript
-type UserTextEvent = { type:"TextEvent", value: string, target: HTMLInputElement};
-type UserMouseEvent = { type:"MouseEvent", value: number, target: HTMLButtonElement};
-type UserEvent = UserTextEvent | UserMouseEvent;
-
-function handle(event: UserEvent) { 
-  if (event.type === "TextEvent") {
-    console.log(event.value)   // event.value类型为string
-    console.log(event.target); // event.target类型为 HTMLInputElement
-  } else {
-    console.log(event.value)   // event.value类型为number
-    console.log(event.target); // event.target类型为 HTMLButtonElement
-  }
-}
-handle({ type: "TextEvent", value: "hello", target: document.getElementsByTagName("input")[0] });
-```
-
-> 一般像这种多个类型的联合类型，并且多个类型含有一个公共可辨识的公共属性的联合类型，还有一个专门的称呼**"可辨识联合类型"**
-
-**可辨识联合类型**对初学者有实际的指导作用，我们在创建类型的时候，就需要想着**最好创建带有可辨识的联合类型，而不是可选字段**
-
-比如，有这样的情况，如果是`circle`的时候，有`radius`属性，如果是`rect`情况，有`width`和`height`属性。对于初学者，很有可能创建成下面的类型：
-
-```typescript
-type Shape = {
-  kind: "circle" | "rect"
-  radius?: number
-  width?: number
-  height?: number
+function isNumber (input: any): input is number {
+  return typeof input === 'number';
 }
 
-function area(shape: Shape) {
-  switch (shape.kind) {
-    case "circle":
-      return Math.PI * shape.radius ** 2; // error shape.radius可能未定义
-    case "rect":
-      return shape.width * shape.height; // error shape.width，shape.height可能未定义
+function foo (input: string | number) {
+  if (isString(input)) {
+    console.log(input) // string
+  } 
+  else if (isNumber(input)) {
+    console.log(input) // number
   }
 }
 ```
 
-上面这种方式kind字段没有与其他字段建立关系，因此，不能保证可选属性是否有值。所以报出了未定义的错误(当然在后面的学习中我们可以使用非空断言`!`处理)。
-
-可辨识的联合类型是一种更好的处理方式：
+自定义类型守卫在我做一些比较复杂类型判断的时候比较有用
 
 ```typescript
-type Circle = { kind: "circle", radius: number }
-type Rect = { kind: "rect", width: number, height: number }
-type Shape = Circle | Rect;
+type Box = {
+  _v_isBox: boolean,
+  value: any,
+}
 
-function area(shape: Shape) {
-  switch (shape.kind) {
-    case "circle":
-      return Math.PI * shape.radius ** 2;
-    case "rect":
-      return shape.width * shape.height;
-  }
+function isBox(box: any): box is Box { 
+  return box && box._v_isBox === true;
+}
+
+function unWrapBox(box: Box) {
+  return isBox(box) ? box.value : box;
 }
 ```
+
+上面的这个代码，其实就是简单模拟了一下Vue3中[isRef](https://github.com/vuejs/core/blob/main/packages/reactivity/src/ref.ts#L97)和[unRef](https://github.com/vuejs/core/blob/main/packages/reactivity/src/ref.ts#L234)的ts代码
+
+```typescript
+export function isRef(r: any): r is Ref {
+  return !!(r && r.__v_isRef === true)
+}
+
+export function unref<T>(ref: MaybeRef<T> | ComputedRef<T>): T {
+  return isRef(ref) ? ref.value : ref
+}
+```
+
+其实前面讲的`字面量的类型检查`，`typeof`，`instanceof`，`in`以及`自定义守卫`在Typescript中有统一的称呼，都叫做**类型守卫**，其目的其实都是在控制流分析的时候，帮助typescript收紧类型，便于推断

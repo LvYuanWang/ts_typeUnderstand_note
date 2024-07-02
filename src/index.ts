@@ -1,69 +1,66 @@
-/* 字面量类型检查(可辩识联合类型) */
+/* 自定义守卫 */
 
-// type UserTextEvent = { value: string, target: HTMLInputElement };
-// type UserMouseEvent = { value: number, target: HTMLButtonElement };
-
-// type UserEvent = UserTextEvent | UserMouseEvent;
-
-// 分析 UserEvent 联合类型, 当通过if进入控制流分析时, UserEvent的属性类型
-// type UserEvent = {
-//     value: string | number;
-//     target: HTMLInputElement | HTMLButtonElement;
-// };
-// value: string --> target: HTMLInputElement | HTMLButtonElement;
-// value: number --> target: HTMLInputElement | HTMLButtonElement;
-
-// function handle(event: UserEvent) {
-//     if (typeof event.value === 'string') {
-//         console.log(event.value);
-//         // 发现此时的event.target任然是HTMLInputElement | HTMLButtonElement
-//         console.log(event.target);
+// 当需要收窄一个联合类型或者对这个联合类型进行控制流分析时, 可以使用if语句中的typeof或instanceof来创建自定义守卫
+// function foo(input: string | number) {
+//     if (typeof input === 'string') {
+//         console.log(input);
 //     } else {
-//         console.log(event.value);
-//         // 发现此时的event.target任然是HTMLInputElement | HTMLButtonElement
-//         console.log(event.target);
+//         console.log(input);
 //     }
 // }
 
-// 通过增加type属性, 可以让控制流分析更加精确
-type UserTextEvent = { type: "TextEvent", value: string, target: HTMLInputElement };
-type UserMouseEvent = { type: "MouseEvent", value: number, target: HTMLButtonElement };
+// 虽然上面的方法可以很好的处理string和number类型, 但是当联合类型中包含多个类型时, 这种方法就不太适用了, 所以可以使用函数来创建自定义守卫
+// function isString(input: any) {
+//     return typeof input === 'string';
+// }
 
-type UserEvent = UserTextEvent | UserMouseEvent;
+// function isNumber(input: any) {
+//     return typeof input === 'number';
+// }
 
-function handle(event: UserEvent) {
-    if (event.type === 'TextEvent') {
-        console.log(event.value);
-        // 现在的event.target则是 HTMLInputElement
-        console.log(event.target);
+// function foo(input: string | number) {
+//     // 但是这种方法无效, 在if里面的类型任然是联合类型
+//     if (isString(input)) {
+//         console.log(input); // input: string | number
+//     } else {
+//         console.log(input); // input: string | number
+//     }
+// }
+
+// 我们就可以在函数中使用 is 关键字来创建自定义守卫
+function isString(input: any): input is string {
+    return typeof input === 'string';
+}
+
+function isNumber(input: any): input is number {
+    return typeof input === 'number';
+}
+
+function foo(input: string | number) {
+    if (isString(input)) {
+        console.log(input); // input: string
     } else {
-        console.log(event.value);
-        // 现在的event.target则是 HTMLButtonElement
-        console.log(event.target);
+        console.log(input); // input: number
     }
 }
 
-handle({ type: "MouseEvent", value: 1, target: document.createElement('button') })
-
-// 比如要顶一个类型别名 Shape, 如果有circle, 就应该有radius属性, 如果有rect, 就应该有width和height属性
-type Circle = {
-    kind: "circle",
-    radius: number
+// 自定义类型守卫在我做一些比较复杂类型判断的时候比较有用
+type Box = {
+    _v_isBox: boolean,
+    value: any
 }
 
-type Rect = {
-    kind: "rect",
-    width: number,
-    height: number
+function isBox(box: any): box is Box {
+    return box && box._v_isBox === true;
 }
 
-type Shape = Circle | Rect;
-
-// 可辨识联合类型: 通过kind字面量类型来区分不同的类型, 目的就是方便做类型收窄及控制流分析
-function area(shape: Shape) {
-    if (shape.kind === 'circle') {
-        return Math.PI * shape.radius ** 2;
-    } else {
-        return shape.width * shape.height
-    }
+function unWrapBox(box: Box) {
+    return isBox(box) ? box.value : box;
 }
+
+let box = {
+    _v_isBox: true,
+    value: 'hello world'
+}
+
+let value = unWrapBox(box);
