@@ -1,143 +1,200 @@
-## never
+## 数组
 
-`never`类型根据其英文翻译，就表示`从来没有`，`绝不`。其实之前已经见到过这个类型
+数组类型有两种声明方式：
 
 ```typescript
-type A = string & number; // never
+类型[]
+或者
+Array<类型>
 ```
 
-我们之前不是讲过有`null`，`undefined`和`void`类型吗？这三个都是有具体意义的，也表示具体的类型，`undefined`表示尚未定义，`null`表示缺少值，甚至是`void`就表示一个空类型，就像没有返回值的函数使用 void 来作为返回值类型标注一样。
 
-而 never 才是一个“什么都没有”的类型，它甚至不包括空的类型，严格来说，**never 类型不携带任何的类型信息**。
 
-比如下面的联合声明：
+```typescript
+let a = [1, 2, 3];
+var b = ["a", "b"];
+const c: boolean[] = [true, false];
+const d: string[] = ["a", "b"];
+
+let e = [1, "a"];
+const f: (number | string)[] = [2, "b"];
+
+a.push(4);
+// a.push("a"); //error
+d.unshift("c");
+
+f.push(3);
+// f.push(true); //error
+```
+
+**一般情况下，数组应该保持同质。**
+
+也就是说，不要在同一个数组中存储不同类型的值，存数值的，就是存数值的数组，存字符串的，就是存字符串的数组。设计程序时要规划好，保持数组中的每个元素都具有相同的类型。
+
+虽然这样让数组变得不灵活了，不过这就是类型语言和javascript这种灵活语言的区别。如果不这么做，我们需要做一些额外的工作，让typescript相信我们执行的操作是安全的。
+
+比如上面的`e`或者`f`，如果我们想映射这个数组，把字母变成大写，把数字变成乘以2：
 
 ```javascript
-type Foo = string | number | boolean | undefined | null | void | never;
+let g = [1, "a"];
+g.map(item => { 
+  if(typeof item === 'number') {
+    return item * 2
+  }
+  return item.toUpperCase();
+})
 ```
 
-我们把常见的基础类型都放入到了联合声明中，但是将鼠标悬浮在类型别名之上，你会发现这里显示的类型是：`string | number | boolean | void | null | undefined`，`never`直接被无视掉了。
+为此，必须使用typeof检查每个元素的类型，判断元素是数字还是字符串，然后再做相应的操作
 
-> 注意：这个特性在以后的类型编程条件判断中经常会被用到，使用never来填充数据
-
-在typescript的类型系统中，`never` 类型被称为 **Bottom Type**，是**整个类型系统层级中最底层的类型**
-
-如果说`any`，`unknown`是其他每个类型的父类型，那么`never`就是其他每个类型的子类型。
-
-这意味着，**never类型可以赋值给其他任何类型，但是反过来，却行不通**
-
-通常我们不会显式地声明一个 `never` 类型，这是没有任何意义的，它主要被类型检查所使用。
-
-不过在实际工作中，特别是在团队开发中，我们可以利用never的特性与类型的控制流分析，让typescript做出更合理的处理
+**对象字面量当然也能和数组一起使用**
 
 ```typescript
-type Method = "GET" | "POST";
-
-function request(url: string, method: Method) {
-  if (method === "GET") {
-    console.log(method); // GET
-    // todos...
-  }
-  else if (method === "POST") {
-    console.log(method); // POST
-    // todos...
-  }
-  else {
-    console.log(method) // never
-  }
-}
+const users: {
+  name: string;
+  age: number;
+}[] = [
+  {
+    name: "John",
+    age: 30,
+  },
+  {
+    name: "Jane",
+    age: 25,
+  },
+];
 ```
 
-上面的代码没有什么问题，但是如果某一天，`Method`类型加入了新的联合类型，比如`type Method = "GET" | "POST" | "PUT" | "DELETE";`，特别是在团队开发中，这个时候，request函数是没有任何感知的。
+当然写成类型别名或者接口肯定可读性更高一些
 
 ```typescript
-type Method = "GET" | "POST" | "PUT" | "DELETE";
+type User = {
+  name: string;
+  age: number;
+};
 
-function request(url: string, method: Method) {
-  if (method === "GET") {
-    console.log(method); // GET
-    // todos...
-  }
-  else if (method === "POST") {
-    console.log(method); // POST
-    // todos...
-  }
-  else {
-    const _neverCheck: never = method;
-    throw new Error(`不知道的类型: ${_neverCheck}`);
-  }
-}
+const users: Array<User> = [
+  {
+    name: "John",
+    age: 30,
+  },
+  {
+    name: "Jane",
+    age: 25,
+  },
+];
 ```
 
-将代码修改为现在的这个样子，虽然现在有报错了，**`method`根据类型流分析，还剩下`"PUT" | "DELETE"`类型，所以不能赋值给`never`类型**。但是将错误扼杀在摇篮中，才是在团队项目中想要的结果，而不是等运行了，才去一个个排查，特别是这种隐藏的bug，在团队的成千上万行代码与模块中，去找到这个问题，是非常痛苦的问题。
+**一般情况下，初始化一个空数组，数组的类型为`any`**
 
-> 这种方式也叫做**穷举式检查**，积极的对不期望的情况进行错误处理，在编译时就捕获未处理的情况。而不是默默地忽略它们
+> **注意：**如果**启用**了 `strictNullChecks` 配置，同时**禁用**了 `noImplicitAny`，声明一个空数组，那么这个未标明类型的数组会被推导为 `never[]` 类型
 
-比如，前面的代码，我们也可以进行修改：
+```javascript
+const arr = []; // any[]
+arr.push(1);
+arr.push("a");
+```
+
+**注意：**当这样的数组离开定义时所在的作用域后，TypeScript将最终确定一个类型，不再扩展。
+
+在实际工作中，可以很好的利用这一特性
+
+```javascript
+function fn() { 
+  const arr = []; // any[]
+  arr.push(1);
+  arr.push("a");
+  return arr; // (string | number)[]
+}
+
+const myArr = fn();
+// myArr.push(true); // error
+```
+
+`readonly`修饰符也可以用来修饰数组，用于创建不可变的数组，只读数组和常规数组没有多大差别，只是不能就地更改。如果想创建只读数组，需要显示的注解类型。
+
+```javascript
+const arr: readonly number[] = [1, 2, 3];
+const myArr1 = arr.concat(4);
+console.log(myArr1);
+
+const myArr2 = arr.filter(item => item % 2 === 0);
+console.log(myArr2)
+
+const myArr3 = arr.slice(0, 2);
+console.log(myArr3);
+
+// arr[3] = 4;  // error 类型“readonly number[]”中的索引签名仅允许读取。
+// arr.push(4); // error 类型“readonly number[]”上不存在属性“push”
+// arr.splice(0,2) // error 属性splice在类型readonly number[]上不存在，你是否指的是slice
+```
+
+在只读数组中，只能使用非变型方法，例如`concat`和`slice`，不能使用可变形方法，比如`push`和`splice`
+
+> **注意：**只读数组不可变的特性能让代码更易于理解，不过其背后提供支持的任然是常规的Javascript数组。这就意味着，即便只是对数组做很小的改动，也要复制整个原数组。
+>
+> 对于小型数组来说，没什么影响，但是对于大型数组，可能会造成极大的影响。
+>
+> 如果打算大量使用不可变的数组，建议使用[immutable](https://www.npmjs.com/package/immutable)包
+
+**使用并集数组的细节**
+
+使用并集数组类型，我们一般有两种的声明方式，两种方式大体上一样，但是有一些细节上的区别
 
 ```typescript
-type Circle = { kind: "circle", radius: number }
-type Rect = { kind: "rect", width: number, height: number }
-type Shape = Circle | Rect;
+// 可以是number数组，可以是string，也可以是number和string类型混合的数组
+type ArrType1 = (number | string)[]; 
+// 要么是number类型，要么是string类型
+type ArrType2 = number[] | string[];
 
-function area(shape: Shape) {
-  switch (shape.kind) {
-    case "circle":
-      return Math.PI * shape.radius ** 2;
-    case "rect":
-      return shape.width * shape.height;
-    default:
-      const _neverCheck: never = shape; 
-      throw new Error("Invalid shape type");
-  }
-}
+const arr1: ArrType1 = ["a", "b", "c"];
+const arr2: ArrType2 = [1, 2, 3];
+// const arr3: ArrType2 = [1, "a", 3]; // error
+const arr4: ArrType1 = [1, "a", 3];
 ```
 
-如果新加一个类型`const _neverCheck: never = shape;` 这行代码就会报错，因为控制流分析并没有完全结束
 
-```diff
-type Circle = { kind: "circle", radius: number }
-type Rect = { kind: "rect", width: number, height: number }
-+type Triangle = { kind: "triangle", base: number, height: number }
-type Shape = Circle | Rect | Triangle;
 
-function area(shape: Shape) {
-  switch (shape.kind) {
-    case "circle":
-      return Math.PI * shape.radius ** 2;
-    case "rect":
-      return shape.width * shape.height;
-+    case "triangle":
-+      return shape.base * shape.height / 2;
-    default:
-      const _neverCheck: never = shape; 
-      throw new Error("Invalid shape type");
-  }
-}
-```
+## 元组
 
-还有在某些情况下使用 never 确实是符合逻辑的，比如一个只负责抛出错误的函数：
+**元祖类型是数组的子类型**，是定义数组的一种特殊方式。
+
+长度固定，各索引位置上的值具有固定的已知类型。在某些固定的场合，使用元祖类型更加方便，严谨性也更好
+
+**声明元组必须显式注解类型**，因为声明元组与数组的声明相同，都是使用方括号`[]`，因此默认推导出来的都是数组类型
+
+比如，在Javascript中，我们经常使用数组来表示一个坐标点。这种做法在TS中也没有任何问题，但是如果我们使用元祖类型，那么无论是提示还是代码严谨性，就更加的好
 
 ```typescript
-function fn():never { 
-  throw new Error("error");
-}
+const pointer1: number[] = [10, 20];
+const pointer2: [number, number] = [20, 30];
 ```
 
-在类型流的分析中，一旦一个返回值类型为 `never` 的函数被调用，那么下方的代码都会被视为无效的代码：
+在typescript4.0中，甚至加入了`具名元祖`，让元祖类型的可读性更高
 
 ```typescript
-function fn():never { 
-  throw new Error("error");
-}
-
-function foo(n: number) { 
-  if (n > 10) { 
-    fn();
-    let name = "jack"; // 检测到无法访问的代码。ts(7027)
-    console.log("hello")
-  }
-}
+const pointer3: [x:number, y:number] = [20, 30];
+const user:[name:string, age:number, gender:"男"|"女"] = ["jack",20,"男"]
 ```
 
-`never`类型在我们后面讲解的条件类型中也可以做出很有意思的处理
+很明显，元祖结构进一步提升了**数组结构的严谨性**
+
+不过元祖类型还是有一个问题，虽然名义上限定了有几个值，并且如果像下面这样写，会报错
+
+```typescript
+pointer3[2] = 40; // error 不能将类型40分配给类型undefined
+```
+
+但是却可以使用`push`方法往里面加入新的值
+
+```typescript
+pointer3.push(40);
+console.log(pointer3)
+```
+
+因此，我们可以将元祖类型限制为可读`readonly`元祖
+
+```typescript
+const pointer3: readonly [x:number, y:number] = [20, 30];
+```
+
