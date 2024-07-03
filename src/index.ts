@@ -1,201 +1,77 @@
-/* 类型断言 */
+/* 类型操作符  satisfies */
+// satisfies --> TS4.9 新增的类型操作符
+// 和类型断言 as 功能类似, 但是比类似断言更加安全也更加智能, 因为它能在满足类似安全的前提下, 自动帮助我们做类型收窄和类型提示
 
-let someValue: any = "this is a string";
-
-let stringLength: number = (<string>someValue).length;
-// 如果要写断言, 建议用 as, 因为上面的形式在react中会有歧义。尖括号语法与 JSX 的标签语法相冲突
-let stringLength2: number = (someValue as string).length;
-
-
-// 联合类型断言
-type MyType = string | number | boolean;
-
-function getLength(type: MyType) {
-  console.log((type as string).length);
-}
-getLength('hello world');
-
-
-type Student = { name: string, score: number };
-type Teacher = { name: string, age: number, subject: string };
-type Person = Student | Teacher;
-
-function print(person: Person) {
-  console.log(person.name);
-  console.log((person as Student).score);   // 默认情况下, 不能直接访问到score属性, 需要断言(不安全)
+interface IConfig {
+  a: string | number;
 }
 
+// const legacy: IConfig = {}
+// console.log(legacy.a)
 
-class Animal {
-  eat() {
-    console.log('animal eat food');
-  }
+// const legacy: IConfig = {} as IConfig;
+// console.log(legacy.a);  // undefined: 不会报错
+
+// 如果类型不安全, 通过 satisfies 转换会提示错误
+// const current: IConfig = {} satisfies IConfig;
+// console.log(current.a);
+
+// const currentWithValue: IConfig = { a: 2 };
+// currentWithValue.a.toFixed(2);  // error: 类型 string | number 不存在toFixed
+
+// const currentWithValue = { a: 2 } as IConfig;
+// currentWithValue.a.toFixed(2);  // error: 类型 string | number 不存在toFixed
+
+const currentWithValue = { a: 2 } satisfies IConfig;
+currentWithValue.a.toFixed(2);  // ok: 类型收窄为 number
+
+
+type MyElement = {
+  tagName: string;
+  src: string;
+  [key: string]: any;
 }
+/*
+[key: string]: any: 任意属性签名, 用于接收任意属性
+  在 TypeScript 中，[key: string]: any; 是一个索引签名。
+  它的意思是，除了已经明确声明的属性（在这个例子中是 tagName 和 src）之外，这个类型的对象可以有任意数量的其他属性，只要这些属性的键是字符串类型。这些额外的属性的值可以是任何类型，这里用 any 表示。
 
-class Dog extends Animal {
-  bark() {
-    console.log('dog bark');
-  }
-}
-
-class Cat extends Animal {
-  jump() {
-    console.log('cat jump');
-  }
-}
-
-function feed(animal: Animal) {
-  (animal as Dog).bark();
-}
-
-// 建议使用控制流分析来替代类型断言
-function feedAnimal(animal: Animal) {
-  if (animal instanceof Dog) {
-    animal.bark();
-  } else if (animal instanceof Cat) {
-    animal.jump();
-  } else {
-    animal.eat();
-  }
-}
-
-// const inputDom = document.querySelector('input') as HTMLInputElement;
-// inputDom.addEventListener('input', e => {
-//   console.log((e.target as HTMLInputElement).value);
-// })
-
-
-const obj = {
-  name: 'joker',
-  age: 18
-};
-(obj as any).age = 20;
-(obj as any).sex = "男";
-
-console.log(obj);
-
-// (window as any).foo = 1;
-
-// 为了解决全局变量的问题, 可以在模块中声明全局变量
-// export { }
-// declare global {
-//   interface Window {
-//     foo: number
-//   }
-// }
-// window.foo = 1;
-
-
-// 将 any/unknown 断言为一个具体类型
-// 第三方 API 或者历史遗留问题, any 或者 unknown 类型的存在
-function getData(id: number): any {
-  return {
-    id: 1,
-    name: "Joker",
-    age: 18
-  }
-}
-
-interface User {
-  id: number,
-  name: string,
-  age: number
-}
-
-const user = getData(8) as User;
-console.log(user.name);
-
-
-// 限制: 若A兼容B, 那么A能够被断言为B, B也能被断言为A
-let str = '123';
-// let n = str as number;  // error
-
-let str1: "hello" = "hello";
-let str2 = "world";
-str2 = str1;
-// str2 = str1 as string;
-
-str1 = str2 as 'hello';
-
-let a: Animal = new Animal();
-let d: Dog = new Dog();
-
-a = d;
-d = a as Dog;
-d.eat();
-// d.bark(); // 不会报错, 但是非常不安全, 因为d的类型是Animal, 但是bark方法是Dog的方法
-
-
-// 非空断言
-let maybeString: string | null = "hello";
-let definitelyString = maybeString!;
-
-function getRandom(length?: number) {
-  if (!length) {
-    return undefined;
+  具体到这个 MyElement 类型的定义：
+  type MyElement = {
+    tagName: string;
+    src: string;
+    [key: string]: any;
   }
 
-  return Math.random().toString(36).slice(-length);
-}
-let s = getRandom(6);
-// 可以使用类型断言
-(s as string).charAt(0);
-// 由于就是字符串和非空的处理, 可以使用非空断言
-s!.charAt(0);
-// 当然也可以使用可选链操作符
-s?.charAt(0);
+  tagName 和 src 是必须的属性，分别是字符串类型。
+  除了 tagName 和 src，MyElement 类型的对象可以有任意多的其他属性，这些属性的键必须是字符串，值可以是任意类型。
 
-type Box = {
-  id: number,
-  name: string
-}
+  例如，以下都是有效的 MyElement 对象：
+  const element1: MyElement = {
+    tagName: 'img',
+    src: 'image.png'
+  };
 
+  const element2: MyElement = {
+    tagName: 'input',
+    src: 'icon.png',
+    type: 'text', // 额外的属性
+    placeholder: 'Enter your name' // 额外的属性
+  };
+  在 element2 的例子中，type 和 placeholder 是根据索引签名 [key: string]: any; 添加的额外属性。
+  这种方式提供了类型定义的灵活性，允许对象拥有除了已定义属性之外的任意数量的其他属性。
+*/
 
-function getBox(): Box | undefined {
-  if (Math.random() > 0.5) {
-    return {
-      id: 1,
-      name: "box1"
-    }
-  }
-  return undefined;
-}
+// const element = {
+//   tagName: 'img',
+//   src: 'https://www.baidu.com/img/PCtm_d9c8750bed0b3c7d089fa7d55720d6cf.png',
+//   alt: '百度logo'
+// } as MyElement;
+// console.log(element.alt); // 没有类型提示
 
-function createProduction(box: Box) {
-  // todo...
-}
-
-createProduction(getBox() as Box);
-// 进行非空断言
-createProduction(getBox()!);
-
-
-// 双重断言
-let str3 = 'hello';
-let n = str3 as unknown as number;
-console.log(n);
-
-
-// as const 断言
-let strConst = 'hello' as const;
-// strConst = 'world';   // error
-
-let arr = [1, 2, 3] as const;
-
-let objConst = { x: 10, y: 20 } as const;
-// objConst.x = 30;  // error
-// objConst.z = 20;  // error
-
-const person = {
-  id: 1,
-  name: 'Joker',
-  address: {
-    city: 'ChengDu',
-    province: 'SiChuan'
-  }
-} as const;
-// person.id = 2;  // error
-
-const roles = ['角色列表', '用户列表', '权限管理', '用户删除'] as const;
-
-type Role = typeof roles[number]; // "角色列表" | "用户列表" | "权限管理" | "用户删除"
+const element = {
+  tagName: 'img',
+  src: 'https://www.baidu.com/img/PCtm_d9c8750bed0b3c7d089fa7d55720d6cf.png',
+  alt: '百度logo',
+} satisfies MyElement;
+console.log(element.alt); // 有类型提示
